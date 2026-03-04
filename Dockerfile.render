@@ -1,0 +1,30 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies required for XGBoost and other ML libs
+RUN apt-get update && apt-get install -y libgomp1 && rm -rf /var/lib/apt/lists/*
+
+# Install both backend and ML dependencies
+COPY backend/requirements.txt ./backend_reqs.txt
+COPY ml/requirements.txt ./ml_reqs.txt
+RUN pip install --no-cache-dir -r backend_reqs.txt -r ml_reqs.txt
+
+# Copy the entire project context (ml module + backend module)
+COPY ml/ ./ml/
+COPY backend/ ./backend/
+
+# Set up environment variables for the runtime
+ENV PYTHONPATH=/app/backend:/app
+ENV ML_MODULE_PATH=/app/ml
+ENV MODEL_ARTIFACTS_PATH=/app/artifacts
+ENV DEMO_MODE=true
+
+# Pre-train the ML model during the build phase so artifacts are baked into the image
+RUN mkdir -p /app/artifacts
+RUN python -m ml.train --artifacts-dir /app/artifacts
+
+EXPOSE 8000
+
+# Start FastAPI server
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

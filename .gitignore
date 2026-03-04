@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.so
+.venv/
+venv/
+env/
+
+# Environment
+.env
+!.env.example
+
+# Docker volumes / data
+postgres_data/
+redis_data/
+
+# Next.js
+frontend/.next/
+frontend/out/
+frontend/node_modules/
+
+# ML artifacts (generated at runtime)
+artifacts/*.pkl
+artifacts/*.json
+artifacts/*.model
+!artifacts/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary scripts added during development
+ml/patch_pricing.py
+ml/data/gen_missing.py
+sync-to-container.js
+sync-frontend.ps1

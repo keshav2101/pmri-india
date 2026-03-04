@@ -1,0 +1,83 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: pmri_india_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-pmri_india}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pmri_india_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-pmri_india}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pmri_india}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  ml-trainer:
+    build:
+      context: ./ml
+      dockerfile: Dockerfile
+    container_name: pmri_india_ml_trainer
+    volumes:
+      - model_artifacts:/app/artifacts
+    environment:
+      - DEMO_MODE=true
+    command: python train.py --artifacts-dir /app/artifacts
+    restart: "no"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: pmri_india_backend
+    depends_on:
+      db:
+        condition: service_healthy
+      ml-trainer:
+        condition: service_completed_successfully
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-pmri_india}:${POSTGRES_PASSWORD:-pmri_india_secret}@db:5432/${POSTGRES_DB:-pmri_india}
+      - JWT_SECRET=${JWT_SECRET:-pmri_india_jwt_secret_change_in_prod}
+      - JWT_ALGORITHM=HS256
+      - JWT_EXPIRE_MINUTES=10080
+      - MARKET_PROVIDER=${MARKET_PROVIDER:-demo}
+      - DEMO_MODE=${DEMO_MODE:-true}
+      - MODEL_ARTIFACTS_PATH=/app/artifacts
+      - ML_MODULE_PATH=/app/ml
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3001,http://localhost:3000}
+      # Tier defaults (overridable via /rules admin endpoint)
+      - RETAIL_MAX_NOTIONAL=${RETAIL_MAX_NOTIONAL:-1000000}
+      - INST_BASIC_MAX_NOTIONAL=${INST_BASIC_MAX_NOTIONAL:-10000000}
+      - INST_PREMIUM_MAX_NOTIONAL=${INST_PREMIUM_MAX_NOTIONAL:-50000000}
+      - MIN_PREMIUM_INR=${MIN_PREMIUM_INR:-500}
+      - INTRADAY_CUTOFF_IST=${INTRADAY_CUTOFF_IST:-15:30}
+    volumes:
+      - model_artifacts:/app/artifacts
+      - ./ml:/app/ml # share ML module with backend
+    ports:
+      - "8001:8000"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: pmri_india_frontend
+    depends_on:
+      - backend
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8001}
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+
+volumes:
+  pgdata:
+  model_artifacts:

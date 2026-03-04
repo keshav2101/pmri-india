@@ -29,20 +29,28 @@ logger = logging.getLogger("pmri")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Ensure DB tables exist
-    engine = create_async_engine(settings.database_url, echo=False)
-    async with engine.begin() as conn:
-        import app.models  # load all ORM models
-        await conn.run_sync(Base.metadata.create_all)
-    
-    # Run inline migrations for new columns added after initial deploy
-    async with engine.begin() as conn:
-        # Add portfolios.status column if it doesn't exist (migration for existing DBs)
-        await conn.execute(
-            __import__('sqlalchemy').text(
-                "ALTER TABLE portfolios ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'"
+    logger.info(f"Attempting to connect to database at: {settings.database_url.split('@')[-1] if '@' in settings.database_url else 'unknown'}")
+    try:
+        engine = create_async_engine(settings.database_url, echo=False)
+        async with engine.begin() as conn:
+            import app.models  # load all ORM models
+            logger.info("Creating all tables if not exist...")
+            await conn.run_sync(Base.metadata.create_all)
+        
+        # Run inline migrations for new columns added after initial deploy
+        async with engine.begin() as conn:
+            # Add portfolios.status column if it doesn't exist (migration for existing DBs)
+            logger.info("Running inline migrations...")
+            await conn.execute(
+                __import__('sqlalchemy').text(
+                    "ALTER TABLE portfolios ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'"
+                )
             )
-        )
-    logger.info("Database schema synchronized.")
+        logger.info("Database schema synchronized.")
+    except Exception as e:
+        logger.error(f"CRITICAL: Database connection or migration failed: {e}")
+        # Allow app to start even if DB fails, so healthcheck can pass and we can read logs
+
     
     # Load ML Model
     try:

@@ -19,6 +19,7 @@ ENV PYTHONPATH=/app/backend:/app
 ENV ML_MODULE_PATH=/app/ml
 ENV MODEL_ARTIFACTS_PATH=/app/artifacts
 ENV DEMO_MODE=true
+ENV PYTHONUNBUFFERED=1
 
 # Pre-train the ML model during the build phase so artifacts are baked into the image
 RUN mkdir -p /app/artifacts

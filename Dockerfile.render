@@ -27,5 +27,5 @@ RUN python -m ml.train --artifacts-dir /app/artifacts
 
 EXPOSE 8000
 
-# Start FastAPI server on the dynamically assigned PORT (or default 8000)
-CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+# Start FastAPI server using a Python launcher script to safely resolve PORT
+CMD ["python", "backend/run.py"]

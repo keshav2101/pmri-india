@@ -12,6 +12,12 @@ class Settings(BaseSettings):
     # DB
     database_url: str = "postgresql+asyncpg://pmri_india:pmri_india_secret@localhost:5432/pmri_india"
 
+    @field_validator("database_url", mode="before")
+    def assemble_db_connection(cls, v: str | None) -> str:
+        if isinstance(v, str) and v.startswith("postgresql://"):
+            return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return v or "postgresql+asyncpg://pmri_india:pmri_india_secret@localhost:5432/pmri_india"
+
     # JWT
     jwt_secret: str = "pmri_india_jwt_secret_change_in_prod"
     jwt_algorithm: str = "HS256"

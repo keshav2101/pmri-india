@@ -189,22 +189,21 @@ docker compose up --build
 
 | Email | Password | Type | Tier |
 |-------|----------|------|------|
-| `retail@demo.in` | `demo1234` | Retail User | RETAIL |
-| `priya@acmefund.in` | `demo1234` | Institutional | INSTITUTIONAL_BASIC |
-| `raj@acmefund.in` | `demo1234` | Institutional (Owner) | INSTITUTIONAL_BASIC |
-| `admin@pmri.in` | `admin1234` | Admin | — |
+| `retail@example.com` | `password` | Retail User | RETAIL |
+| `admin@fund.com` | `password` | Institutional (Owner) | INSTITUTIONAL_BASIC |
+| `trader@fund.com` | `password` | Institutional | INSTITUTIONAL_BASIC |
 
-**Demo Org:** `Acme Capital Fund` (switch using the org switcher in the navbar)
+**Demo Org:** `Global Macro Fund` (switch using the org switcher in the navbar)
 
 ---
 
 ## 📊 Demo Walkthrough
 
 ### As a Retail User
-1. Login at **http://localhost:3001/login** as `retail@demo.in`
+1. Login at **http://localhost:3001/login** as `retail@example.com`
 2. Go to **Portfolios** → Create a new portfolio
 3. Upload a CSV (`symbol,exchange,quantity`):
-   ```
+   ```csv
    RELIANCE,NSE,50
    TCS,NSE,20
    INFY,NSE,100
@@ -215,9 +214,9 @@ docker compose up --build
 7. Deactivate / Re-activate the policy using the toggle buttons
 
 ### As Admin (Settlement Trigger)
-1. Login as `admin@pmri.in`
+1. Login as global admin (currently disabled for public demo without direct DB edit).
 2. Go to **Admin** → trigger a settlement run
-3. All eligible matured policies are settled automatically
+3. All eligible matured policies will be settled automatically.
 
 ---
 
@@ -359,5 +358,3 @@ MIT License — see [LICENSE](LICENSE) for details.
   Built with ❤️ for the Indian fintech ecosystem<br/>
   <strong>Not for production use. Educational purposes only.</strong>
 </div>
- 
- 

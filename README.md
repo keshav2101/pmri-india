@@ -8,7 +8,28 @@
 
 ## 🏗️ Architecture
 
-![System Architecture](docs/architecture.png)
+
+```mermaid
+graph TD
+    subgraph "Frontend Layer"
+        UI[Next.js + Tailwind CSS]
+    end
+
+    subgraph "Backend Layer"
+        API[FastAPI Backend]
+        DB[(PostgreSQL)]
+        ML[XGBoost ML Module]
+    end
+
+    subgraph "Infrastructure"
+        Cron[APScheduler Settlement Engine]
+    end
+
+    UI -- REST / JSON --> API
+    API -- Read/Write --> DB
+    API -- In-Memory Inference --> ML
+    Cron -- Triggers --> API
+```
 
 ### Component Overview
 

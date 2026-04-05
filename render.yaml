@@ -3,23 +3,29 @@ services:
     name: pmri-backend
     env: docker
     dockerfilePath: ./Dockerfile.render
-    plan: starter # or free, depending on the user's Render account limits
-    region: frankfurt # Deploy close to user location (or singapore/ohio)
+    plan: starter
+    region: singapore
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: pmri-db
-          property: connectionString
+        value: postgresql://postgres:guidewire%4027@db.dmqiopqbpvwwkxbtiqii.supabase.co:5432/postgres
       - key: JWT_SECRET
-        generateValue: true
+        value: pmri_india_jwt_secret_change_in_production_min_32_chars
       - key: CORS_ORIGINS
-        value: "https://pmri-india.vercel.app" # Replace with actual Vercel URL
+        value: https://pmri-india.vercel.app
       - key: DEMO_MODE
         value: "true"
-
-databases:
-  - name: pmri-db
-    databaseName: pmri_india
-    user: pmri_india
-    plan: free
+      - key: LOG_LEVEL
+        value: INFO
+      - key: MARKET_PROVIDER
+        value: demo
+      - key: RETAIL_MAX_NOTIONAL
+        value: "1000000"
+      - key: INST_BASIC_MAX_NOTIONAL
+        value: "10000000"
+      - key: INST_PREMIUM_MAX_NOTIONAL
+        value: "50000000"
+      - key: MIN_PREMIUM_INR
+        value: "500"
+      - key: INTRADAY_CUTOFF_IST
+        value: "15:30"

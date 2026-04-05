@@ -31,7 +31,10 @@ async def lifespan(app: FastAPI):
     # Ensure DB tables exist
     logger.info(f"Attempting to connect to database at: {settings.database_url.split('@')[-1] if '@' in settings.database_url else 'unknown'}")
     try:
-        engine = create_async_engine(settings.database_url, echo=False)
+        _ca: dict = {}
+        if ":6543/" in settings.database_url or "pooler.supabase.com" in settings.database_url:
+            _ca = {"statement_cache_size": 0, "prepared_statement_cache_size": 0}
+        engine = create_async_engine(settings.database_url, echo=False, connect_args=_ca)
         async with engine.begin() as conn:
             import app.models  # load all ORM models
             logger.info("Creating all tables if not exist...")

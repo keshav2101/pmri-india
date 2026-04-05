@@ -16,20 +16,21 @@ from typing import Optional, Tuple
 # Internal canonical universe (extended by data/valid_universe.csv at runtime)
 # ---------------------------------------------------------------------------
 
-# Hardcoded baseline — NSE Large-cap cash equities for demo mode
+# Hardcoded baseline — Large-cap cash equities for demo/fallback
 _DEMO_UNIVERSE_NSE = {
     "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK",
     "WIPRO", "BHARTIARTL", "SBIN", "HINDUNILVR", "ITC",
     "BAJFINANCE", "KOTAKBANK", "LTIM", "AXISBANK", "MARUTI",
 }
+_DEMO_UNIVERSE_BSE = set(_DEMO_UNIVERSE_NSE)  # BSE mirrors NSE for demo
 _DEMO_UNIVERSE_NASDAQ = {
-    "AAPL", "MSFT", "GOOGL", "TSLA",
+    "AAPL", "MSFT", "GOOGL", "TSLA", "AMZN", "NVDA", "META",
 }
 
 # Exchange aliases
 _EXCHANGE_ALIASES = {
-    "NSE": "NSE", "BSE": "BSE", "NASDAQ": "NASDAQ",
-    "nse": "NSE", "bse": "BSE", "nasdaq": "NASDAQ",
+    "NSE": "NSE", "BSE": "BSE", "NASDAQ": "NASDAQ", "NYSE": "NYSE",
+    "nse": "NSE", "bse": "BSE", "nasdaq": "NASDAQ", "nyse": "NYSE",
     "N": "NSE", "B": "BSE", "NS": "NSE", "BS": "BSE",
 }
 
@@ -43,9 +44,10 @@ def _load_universe() -> dict[str, set[str]]:
         return _universe_cache
 
     universe: dict[str, set[str]] = {
-        "NSE": set(_DEMO_UNIVERSE_NSE),
-        "BSE": set(_DEMO_UNIVERSE_NSE),
-        "NASDAQ": set(_DEMO_UNIVERSE_NASDAQ)
+        "NSE":    set(_DEMO_UNIVERSE_NSE),
+        "BSE":    set(_DEMO_UNIVERSE_BSE),
+        "NASDAQ": set(_DEMO_UNIVERSE_NASDAQ),
+        "NYSE":   set(),
     }
 
     csv_path = Path(__file__).parent / "data" / "valid_universe.csv"
@@ -102,18 +104,29 @@ def canonical_key(symbol: str, exchange: str) -> str:
 
 def validate_cash_equity(symbol: str, exchange: str) -> Tuple[bool, Optional[str]]:
     """
-    Validate that the given symbol is a listed NSE/BSE cash equity.
+    Validate that the given symbol is a listed cash equity.
 
-    Returns:
-        (is_valid, rejection_reason_or_None)
+    In LIVE mode: any NSE/BSE symbol passes — Yahoo Finance validates dynamically.
+    In DEMO mode: only symbols in the static universe CSV are accepted.
     """
+    try:
+        from app.core.config import get_settings
+        settings = get_settings()
+        if settings.market_provider.lower() == "live":
+            # Dynamic validation — accept any symbol; Yahoo Finance will reject unknown ones
+            if exchange not in ("NSE", "BSE", "NASDAQ", "NYSE"):
+                return False, f"Unknown exchange '{exchange}'. Use NSE, BSE, NASDAQ, or NYSE."
+            return True, None
+    except Exception:
+        pass
+
+    # Demo/fallback: strict universe check
     universe = _load_universe()
     exc_universe = universe.get(exchange, set())
-
     if symbol not in exc_universe:
         return False, (
-            f"'{symbol}.{exchange}' is not in the supported cash equity universe. "
-            f"Derivatives, ETFs (non-equity), SME, and unlisted instruments are not supported."
+            f"'{symbol}.{exchange}' is not in the supported universe. "
+            f"In live mode any NSE/BSE symbol is accepted."
         )
     return True, None
 

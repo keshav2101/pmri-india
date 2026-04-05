@@ -56,12 +56,34 @@ async def get_price_history(
         raise HTTPException(status_code=404, detail=str(e))
 
 
+@router.get("/validate/{symbol}")
+async def validate_symbol(symbol: str, current_user: User = Depends(get_current_user)):
+    """
+    Validate any NSE/BSE/NASDAQ symbol dynamically.
+    Accepts: RELIANCE.NSE, HDFCBANK.BSE, AAPL.NASDAQ, ZOMATO.NSE etc.
+    Returns price if valid, 404 if not found on Yahoo Finance.
+    """
+    sym = symbol.upper().strip()
+    is_valid, price = market_service.validate_symbol(sym)
+    if not is_valid or price is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"'{sym}' not found. Check the symbol name (e.g. RELIANCE.NSE, ZOMATO.NSE, AAPL.NASDAQ)."
+        )
+    return {
+        "symbol": sym,
+        "valid": True,
+        "price": price,
+        "data_source": market_service.data_source,
+    }
+
+
 @router.get("/status")
 async def market_status(current_user: User = Depends(get_current_user)):
     """Returns current market data provider status."""
     return {
         "provider": market_service.provider,
         "data_source": market_service.data_source,
-        "symbols_covered": len(market_service.symbols),
-        "symbols": market_service.symbols,
+        "note": "Supports ALL NSE (SYMBOL.NSE) and BSE (SYMBOL.BSE) stocks dynamically via Yahoo Finance.",
     }
+

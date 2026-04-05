@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 10080  # 7 days
 
     # Market data
-    market_provider: str = "demo"
+    market_provider: str = "live"
     market_api_key: str  = ""
 
     # App

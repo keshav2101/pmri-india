@@ -84,11 +84,14 @@ app.include_router(settlements_router)
 app.include_router(ledger_router)
 
 
-# CORS - must be absolute last to be outermost!
+# CORS — allow all origins for demo deployment
+# In production, restrict this to specific frontend domains
+_cors_origins = ["*"]
+logger.info(f"CORS allow_origins: {_cors_origins}")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
-    allow_credentials=True,
+    allow_origins=_cors_origins,
+    allow_credentials=False,  # must be False when allow_origins=["*"]
     allow_methods=["*"],
     allow_headers=["*"],
 )
